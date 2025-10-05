@@ -1820,6 +1820,8 @@
               <ColumnDefinition Width="Auto"/>
               <ColumnDefinition Width="2*"/>
               <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="2*"/>
+              <ColumnDefinition Width="Auto"/>
               <ColumnDefinition Width="3*"/>
               <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -1838,11 +1840,16 @@
                                WatermarkContent="{Binding WatermarkContent, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                WatermarkContentTemplate="{Binding WatermarkContentTemplate, RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
             <Label Content=" min " Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="5"/>
-            <ctrl:NumericTextBox Value="{Binding Seconds, RelativeSource={RelativeSource Mode=TemplatedParent}}" Grid.Column="6"
-                               DecimalPlaces="7" DisplayUpDownButtons="False" SelectAllOnFocus="True" Margin="-1" TextAlignment="Right" Minimum="0.0000000" Maximum="59.9999999"
+            <ctrl:NumericTextBox Value="{Binding Seconds, RelativeSource={RelativeSource Mode=TemplatedParent}, Converter={cvt:ToDouble}}" Grid.Column="6"
+                               DecimalPlaces="0" DisplayUpDownButtons="False" SelectAllOnFocus="True" Margin="-1" TextAlignment="Right" Minimum="0" Maximum="59"
                                WatermarkContent="{Binding WatermarkContent, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                WatermarkContentTemplate="{Binding WatermarkContentTemplate, RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
             <Label Content=" s " Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="7"/>
+            <ctrl:NumericTextBox Value="{Binding Milliseconds, RelativeSource={RelativeSource Mode=TemplatedParent}}" Grid.Column="8"
+                               DecimalPlaces="4" DisplayUpDownButtons="False" SelectAllOnFocus="True" Margin="-1" TextAlignment="Right" Minimum="0.0000" Maximum="999.9999"
+                               WatermarkContent="{Binding WatermarkContent, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                               WatermarkContentTemplate="{Binding WatermarkContentTemplate, RelativeSource={RelativeSource Mode=TemplatedParent}}"/>
+            <Label Content=" ms " Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="9"/>
           </Grid>
         </ControlTemplate>
       </Setter.Value>

@@ -46,7 +46,12 @@ namespace Stride.Core.Presentation.Controls
         /// <summary>
         /// Identifies the <see cref="Seconds"/> dependency property.
         /// </summary>
-        public static readonly DependencyProperty SecondsProperty = DependencyProperty.Register("Seconds", typeof(double?), typeof(TimeSpanEditor), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnComponentPropertyChanged));
+        public static readonly DependencyProperty SecondsProperty = DependencyProperty.Register("Seconds", typeof(int?), typeof(TimeSpanEditor), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnComponentPropertyChanged));
+
+        /// <summary>
+        /// Identifies the <see cref="Milliseconds"/> dependency property.
+        /// </summary>
+        public static readonly DependencyProperty MillisecondsProperty = DependencyProperty.Register("Milliseconds", typeof(double?), typeof(TimeSpanEditor), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnComponentPropertyChanged));
 
         /// <summary>
         /// Gets or sets the content to display when the TextBox is empty.
@@ -81,7 +86,12 @@ namespace Stride.Core.Presentation.Controls
         /// <summary>
         /// Gets or sets the number of seconds displayed in the <see cref="TimeSpanEditor"/>.
         /// </summary>
-        public double? Seconds { get { return (double?)GetValue(SecondsProperty); } set { SetValue(SecondsProperty, value); } }
+        public int? Seconds { get { return (int?)GetValue(SecondsProperty); } set { SetValue(SecondsProperty, value); } }
+
+        /// <summary>
+        /// Gets or sets the number of milliseconds displayed in the <see cref="TimeSpanEditor"/>.
+        /// </summary>
+        public double? Milliseconds { get { return (double?)GetValue(MillisecondsProperty); } set { SetValue(MillisecondsProperty, value); } }
 
         /// <inheritdoc/>
         public override void OnApplyTemplate()
@@ -102,7 +112,8 @@ namespace Stride.Core.Presentation.Controls
                 SetCurrentValue(DaysProperty, value.Value.Days);
                 SetCurrentValue(HoursProperty, value.Value.Hours);
                 SetCurrentValue(MinutesProperty, value.Value.Minutes);
-                SetCurrentValue(SecondsProperty, (double)(value.Value.Ticks % TimeSpan.TicksPerMinute) / TimeSpan.TicksPerSecond);
+                SetCurrentValue(SecondsProperty, value.Value.Seconds);
+                SetCurrentValue(MillisecondsProperty, (double)(value.Value.Ticks % TimeSpan.TicksPerSecond) / TimeSpan.TicksPerMillisecond);
             }
         }
 
@@ -115,13 +126,15 @@ namespace Stride.Core.Presentation.Controls
             // NOTE: Precision must be on OS tick level.
 
             if (property == DaysProperty)
-                return Days.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Days.Value * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Value.Value.Ticks % TimeSpan.TicksPerMinute) : null;
+                return Days.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Days.Value * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Value.Value.Seconds * TimeSpan.TicksPerSecond + Value.Value.Ticks % TimeSpan.TicksPerSecond) : null;
             if (property == HoursProperty)
-                return Hours.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Hours.Value * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Value.Value.Ticks % TimeSpan.TicksPerMinute) : null;
+                return Hours.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Hours.Value * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Value.Value.Seconds * TimeSpan.TicksPerSecond + Value.Value.Ticks % TimeSpan.TicksPerSecond) : null;
             if (property == MinutesProperty)
-                return Minutes.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Minutes.Value * TimeSpan.TicksPerMinute + Value.Value.Ticks % TimeSpan.TicksPerMinute) : null;
+                return Minutes.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Minutes.Value * TimeSpan.TicksPerMinute + Value.Value.Seconds * TimeSpan.TicksPerSecond + Value.Value.Ticks % TimeSpan.TicksPerSecond) : null;
             if (property == SecondsProperty)
-                return Seconds.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + (long)(Seconds.Value * TimeSpan.TicksPerSecond)) : null;
+                return Seconds.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Seconds.Value * TimeSpan.TicksPerSecond + Value.Value.Ticks % TimeSpan.TicksPerSecond) : null;
+            if (property == MillisecondsProperty)
+                return Milliseconds.HasValue && Value.HasValue ? (TimeSpan?)new TimeSpan(Value.Value.Days * TimeSpan.TicksPerDay + Value.Value.Hours * TimeSpan.TicksPerHour + Value.Value.Minutes * TimeSpan.TicksPerMinute + Value.Value.Seconds * TimeSpan.TicksPerSecond + (long)(Milliseconds.Value * TimeSpan.TicksPerMillisecond)) : null;
 
             throw new ArgumentException("Property unsupported by method UpdateValueFromComponent.");
         }
@@ -148,7 +161,7 @@ namespace Stride.Core.Presentation.Controls
         }
 
         /// <summary>
-        /// Raised when either of the <see cref="Days"/>, <see cref="Hours"/>, <see cref="Minutes"/> or <see cref="Seconds"/> properties are modified.
+        /// Raised when either of the <see cref="Days"/>, <see cref="Hours"/>, <see cref="Minutes"/>, <see cref="Seconds"/>, or <see cref="Milliseconds"/> properties are modified.
         /// </summary>
         /// <param name="e">The event data.</param>
         private void OnComponentPropertyChanged(DependencyPropertyChangedEventArgs e)
@@ -184,7 +197,7 @@ namespace Stride.Core.Presentation.Controls
         }
 
         /// <summary>
-        /// Raised by <see cref="DaysProperty"/>, <see cref="HoursProperty"/>, <see cref="MinutesProperty"/> or <see cref="SecondsProperty"/> when the <see cref="Days"/>, <see cref="Hours"/>, <see cref="Minutes"/> or <see cref="Seconds"/> dependency property is modified.
+        /// Raised by <see cref="DaysProperty"/>, <see cref="HoursProperty"/>, <see cref="MinutesProperty"/>, <see cref="SecondsProperty"/>, or <see cref="MillisecondsProperty"/> when the <see cref="Days"/>, <see cref="Hours"/>, <see cref="Minutes"/>, <see cref="Seconds"/>, or <see cref="Milliseconds"/> dependency property is modified.
         /// </summary>
         /// <param name="sender">The dependency object where the event handler is attached.</param>
         /// <param name="e">The event data.</param>
