@@ -17,6 +17,8 @@ on:
       - 'sources/engine/Stride.Audio/**'
       - 'sources/engine/Stride.Engine/**'
       - 'sources/shared/SharedAssemblyInfo.cs'
+      - 'sources/core/Stride.Core.AssemblyProcessor/**'
+      - 'sources/targets/Stride.Core.targets'
       - '.github/workflows/publish-github-packages.yml'
 
 env:
