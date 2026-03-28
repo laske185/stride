@@ -60,15 +60,6 @@ jobs:
             Set-Content $file
           Write-Host "Patched version to 4.3.0.2507$suffix"
 
-      - name: Build Assembly Processor
-        run: |
-          dotnet build build/Stride.AssemblyProcessor.sln `
-            -restore -m:1 -nr:false `
-            -v:m -p:WarningLevel=0 `
-            -p:Configuration=${{ env.CONFIGURATION }} `
-            -p:StrideSkipUnitTests=true `
-            -p:StrideSkipAutoPack=true
-
       - name: Restore NuGet packages
         run: |
           dotnet msbuild build/Stride.Runtime.sln `
@@ -76,7 +67,7 @@ jobs:
             /p:Configuration=${{ env.CONFIGURATION }} `
             /p:StrideSkipUnitTests=true `
             /p:StrideSign=false `
-            /p:StrideAssemblyProcessorFramework=net10.0 `
+            /p:StrideAssemblyProcessorGlobal=false `
             /m
 
       - name: Build & Pack (Runtime packages)
@@ -86,7 +77,7 @@ jobs:
             /p:StrideSkipAutoPack=false `
             /p:StrideSign=false `
             /p:StrideSkipUnitTests=true `
-            /p:StrideAssemblyProcessorFramework=net10.0 `
+            /p:StrideAssemblyProcessorGlobal=false `
             /m `
             /verbosity:minimal
 
