@@ -15,11 +15,11 @@
     <!--Use "-v" to debug the tooling -->
     <StrideNativeToolingDebug></StrideNativeToolingDebug> 
 
-    <StrideNativeLldCommand>lld</StrideNativeLldCommand>
-    <StrideNativeLldCommand Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(MSBuildThisFileDirectory)..\..\deps\\LLVM\lld.exe</StrideNativeLldCommand>
+    <StrideNativeLldCommand Condition="'$(StrideNativeLldCommand)' == ''">lld</StrideNativeLldCommand>
+    <StrideNativeLldCommand Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(StrideNativeLldCommand)' == 'lld'">$(MSBuildThisFileDirectory)..\..\deps\\LLVM\lld.exe</StrideNativeLldCommand>
 
-    <StrideNativeClangCommand>clang</StrideNativeClangCommand>
-    <StrideNativeClangCommand Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(MSBuildThisFileDirectory)..\..\deps\\LLVM\clang.exe</StrideNativeClangCommand>
+    <StrideNativeClangCommand Condition="'$(StrideNativeClangCommand)' == ''">clang</StrideNativeClangCommand>
+    <StrideNativeClangCommand Condition="$([MSBuild]::IsOSPlatform('Windows')) And '$(StrideNativeClangCommand)' == 'clang'">$(MSBuildThisFileDirectory)..\..\deps\\LLVM\clang.exe</StrideNativeClangCommand>
     
     <StrideNativeClang>$(StrideNativeToolingDebug) -Wno-ignored-attributes -Wno-delete-non-virtual-dtor -Wno-macro-redefined -I&quot;$(MSBuildThisFileDirectory)..\..\deps\\NativePath&quot; -I&quot;$(MSBuildThisFileDirectory)..\..\deps\\NativePath\standard&quot;</StrideNativeClang>
     <StrideNativeClangCPP>-std=c++11 -fno-rtti -fno-exceptions</StrideNativeClangCPP>
