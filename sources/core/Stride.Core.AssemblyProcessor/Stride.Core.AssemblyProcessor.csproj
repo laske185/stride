@@ -23,9 +23,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <!-- Generate runtimeconfig.json for net10.0 so 'dotnet Stride.Core.AssemblyProcessor.dll' works -->
+  <!-- For net10.0: build as an executable so 'dotnet Stride.Core.AssemblyProcessor.dll' works.
+       OutputType=Exe sets the PE entry point (Main is in AssemblyProcessorProgram.cs) and
+       automatically generates runtimeconfig.json. netstandard2.0 stays as Library for the
+       MSBuild UsingTask in-process loading path. -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -89,11 +92,6 @@
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
 
-  <!-- Define the full set of built items for later use -->
-  <ItemGroup>
-    <BuiltItems Include="$(TargetDir)*" />
-  </ItemGroup>
-
   <!-- ======================================================================================== -->
   <!-- Tasks & Targets                                                                          -->
   <!-- ======================================================================================== -->
@@ -119,7 +117,13 @@
   </UsingTask>
 
   <!-- Copies the built items to the deps folder -->
+  <!-- NOTE: BuiltItems is defined inside the target so the glob is evaluated at execution
+       time (when bin/ exists), not at project load time (when bin/ may not exist yet on a
+       fresh machine/CI runner). -->
   <Target Name="CopyFiles" AfterTargets="PostBuildEvent">
+    <ItemGroup>
+      <BuiltItems Include="$(TargetDir)*" />
+    </ItemGroup>
     <Copy
       SourceFiles="@(BuiltItems)"
       DestinationFolder="$(DependencyDir)\AssemblyProcessor\$(TargetFramework)"
