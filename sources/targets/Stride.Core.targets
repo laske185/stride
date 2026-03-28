@@ -117,7 +117,8 @@
     <Message Importance="High" Text="&quot;$(StrideAssemblyProcessorTempPath)&quot; $(StrideAssemblyProcessorOptions)"/>
     <AssemblyProcessorTask Condition=" '$(StrideAssemblyProcessorDev)' != 'true' " Arguments="$(StrideAssemblyProcessorOptions)"/>
     <!-- Dev mode: don't use task to avoid locking the file -->
-    <Exec Condition=" '$(StrideAssemblyProcessorDev)' == 'true' " Command="&quot;$(StrideAssemblyProcessorTempPath)&quot; $(StrideAssemblyProcessorOptions)"/>
+    <!-- On .NET Core/5+, the DLL cannot be executed directly; prefix with 'dotnet' -->
+    <Exec Condition=" '$(StrideAssemblyProcessorDev)' == 'true' " Command="dotnet &quot;$(StrideAssemblyProcessorTempPath)&quot; $(StrideAssemblyProcessorOptions)"/>
 
     <!-- Copy User Documentation (.usrdoc) file to output -->
     <Copy
