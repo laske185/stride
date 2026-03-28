@@ -127,6 +127,16 @@ namespace Stride.Engine
         public HrtfEnvironment Environment { get; set; }
 
         /// <summary>
+        /// Scales the distance at which this emitter is heard. A value of 1 uses the default falloff. Higher values make the sound audible at greater distances.
+        /// </summary>
+        /// <userdoc>
+        /// Scales the distance at which this emitter is heard. A value of 1 uses the default falloff. Higher values make the sound audible at greater distances.
+        /// </userdoc>
+        [DataMember(50)]
+        [DataMemberRange(0.01, 10000.0, 0.1, 1.0, 2)]
+        public float DistanceScale { get; set; } = 1.0f;
+
+        /// <summary>
         /// Attach a <see cref="SoundBase"/> to this emitter component.
         /// Once attached a <see cref="AudioEmitterSoundController"/> can be queried using readonly <see cref="AudioEmitterComponent.this[string]"/> indexer to control the attached SoundBase.
         /// </summary>

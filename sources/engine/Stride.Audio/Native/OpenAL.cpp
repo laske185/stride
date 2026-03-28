@@ -371,7 +371,7 @@ extern "C" {
 			MakeContextCurrent(NULL);
 		}
 
-		DLL_EXPORT_API xnAudioSource* xnAudioSourceCreate(xnAudioListener* listener, int sampleRate, int maxNBuffers, npBool mono, npBool spatialized, npBool streamed, npBool hrtf, float directionFactor, int environment)
+		DLL_EXPORT_API xnAudioSource* xnAudioSourceCreate(xnAudioListener* listener, int sampleRate, int maxNBuffers, npBool mono, npBool spatialized, npBool streamed, npBool hrtf, float directionFactor, int environment, float distanceScale)
 		{
 			(void)spatialized;
 			(void)maxNBuffers;
@@ -386,7 +386,7 @@ extern "C" {
 
 			GenSources(1, &res->source);
 			AL_ERROR;
-			SourceF(res->source, AL_REFERENCE_DISTANCE, 1.0f);
+			SourceF(res->source, AL_REFERENCE_DISTANCE, distanceScale);
 			AL_ERROR;
 
 			if(spatialized)

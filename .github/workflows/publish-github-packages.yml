@@ -1,0 +1,113 @@
+name: Publish NuGet Packages to GitHub Packages
+
+on:
+  # Manuell auslösbar mit optionalem Versions-Suffix
+  workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: 'NuGet Version Suffix (z.B. -local, -beta, leer lassen für keinen Suffix)'
+        required: false
+        default: '-local'
+
+  # Automatisch bei Push auf den Feature-Branch
+  push:
+    branches:
+      - 'feature/audio-distance-scale'
+    paths:
+      - 'sources/engine/Stride.Audio/**'
+      - 'sources/engine/Stride.Engine/**'
+      - 'sources/shared/SharedAssemblyInfo.cs'
+      - '.github/workflows/publish-github-packages.yml'
+
+env:
+  CONFIGURATION: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_NOLOGO: true
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout (full history for git versioning)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Patch version in SharedAssemblyInfo.cs
+        run: |
+          $file = "sources/shared/SharedAssemblyInfo.cs"
+          $suffix = "${{ github.event.inputs.version_suffix || '-local' }}"
+          (Get-Content $file) `
+            -replace 'PublicVersion = "4\.3\.0\.\d+"', 'PublicVersion = "4.3.0.2507"' `
+            -replace 'NuGetVersionSuffix = "[^"]*"', "NuGetVersionSuffix = `"$suffix`"" |
+            Set-Content $file
+          Write-Host "Patched version to 4.3.0.2507$suffix"
+
+      - name: Restore NuGet packages
+        run: |
+          msbuild build/Stride.Runtime.sln `
+            /t:Restore `
+            /p:Configuration=${{ env.CONFIGURATION }} `
+            /p:StrideSkipUnitTests=true `
+            /p:StrideSign=false `
+            /m
+
+      - name: Build & Pack (Runtime packages)
+        run: |
+          msbuild build/Stride.Runtime.sln `
+            /p:Configuration=${{ env.CONFIGURATION }} `
+            /p:StrideSkipAutoPack=false `
+            /p:StrideSign=false `
+            /p:StrideSkipUnitTests=true `
+            /m `
+            /verbosity:minimal
+
+      - name: List generated packages
+        run: |
+          $packages = Get-ChildItem "bin/packages/*.nupkg" -ErrorAction SilentlyContinue
+          Write-Host "Found $($packages.Count) packages:"
+          $packages | ForEach-Object { Write-Host "  $($_.Name)" }
+
+      - name: Push to GitHub Packages
+        run: |
+          dotnet nuget add source `
+            --username ${{ github.actor }} `
+            --password ${{ secrets.GITHUB_TOKEN }} `
+            --store-password-in-clear-text `
+            --name github `
+            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+          # Alle Runtime-Pakete pushen, bereits vorhandene Versionen überspringen
+          Get-ChildItem "bin/packages/*.nupkg" | ForEach-Object {
+            Write-Host "Pushing: $($_.Name)"
+            dotnet nuget push $_.FullName `
+              --source github `
+              --skip-duplicate
+          }
+
+      - name: Upload packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: bin/packages/*.nupkg
+          retention-days: 30

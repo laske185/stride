@@ -70,7 +70,7 @@ namespace Stride.Audio
         /// </summary>
         /// <returns>A new sound instance</returns>
         /// <exception cref="ObjectDisposedException">The sound has already been disposed</exception>
-        public abstract SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small);
+        public abstract SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f);
 
         internal void Attach(AudioEngine engine)
         {

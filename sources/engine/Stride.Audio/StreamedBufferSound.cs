@@ -64,14 +64,14 @@ namespace Stride.Audio
         /// </summary>
         /// <returns>A new sound instance</returns>
         /// <exception cref="ObjectDisposedException">The sound has already been disposed</exception>
-        public override SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        public override SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
             if (listener == null)
                 listener = AudioEngine.DefaultListener;
 
             CheckNotDisposed();
 
-            var newInstance = new SoundInstanceStreamedBuffer(scheduler, this, mediaDataUrl, startPosition, length, listener, useHrtf, directionalFactor, environment)
+            var newInstance = new SoundInstanceStreamedBuffer(scheduler, this, mediaDataUrl, startPosition, length, listener, useHrtf, directionalFactor, environment, distanceScale)
             {
                 Name = Name + " - Instance " + intancesCreationCount,
             };

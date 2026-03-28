@@ -26,8 +26,8 @@ namespace Stride.Audio
             }
         }
 
-        internal SoundInstanceStreamedBuffer(MediaSynchronizer scheduler, StreamedBufferSound soundStreamedBuffer, string mediaDataUrl, long startPosition, long length, 
-            AudioListener listener, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        internal SoundInstanceStreamedBuffer(MediaSynchronizer scheduler, StreamedBufferSound soundStreamedBuffer, string mediaDataUrl, long startPosition, long length,
+            AudioListener listener, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
             this.scheduler = scheduler;
             Listener = listener;
@@ -42,8 +42,8 @@ namespace Stride.Audio
             soundSource = streamedSource = new StreamedBufferSoundSource(this, this.scheduler, mediaDataUrl, startPosition, length);
 
             //Create the AudioLayer source
-            Source = AudioLayer.SourceCreate(listener.Listener, soundStreamedBuffer.SampleRate, streamedSource.MaxNumberOfBuffers, 
-                soundStreamedBuffer.Channels == 1, spatialized, true, useHrtf, directionalFactor, environment);
+            Source = AudioLayer.SourceCreate(listener.Listener, soundStreamedBuffer.SampleRate, streamedSource.MaxNumberOfBuffers,
+                soundStreamedBuffer.Channels == 1, spatialized, true, useHrtf, directionalFactor, environment, distanceScale);
 
             if (Source.Ptr == IntPtr.Zero)
                 throw new Exception("Failed to create an AudioLayer Source");

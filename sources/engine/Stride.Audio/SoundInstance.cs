@@ -40,7 +40,7 @@ namespace Stride.Audio
         /// <param name="useHrtf">If the engine should use Hrtf for spatialization</param>
         /// <param name="directionalFactor"></param>
         /// <param name="environment"></param>
-        public SoundInstance(AudioEngine engine, AudioListener listener, DynamicSoundSource dynamicSoundSource, int sampleRate, bool mono, bool spatialized = false, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        public SoundInstance(AudioEngine engine, AudioListener listener, DynamicSoundSource dynamicSoundSource, int sampleRate, bool mono, bool spatialized = false, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
             Listener = listener;
             this.engine = engine;
@@ -50,7 +50,7 @@ namespace Stride.Audio
             if (engine.State == AudioEngineState.Invalidated)
                 return;
 
-            Source = AudioLayer.SourceCreate(listener.Listener, sampleRate, dynamicSoundSource.MaxNumberOfBuffers, mono, spatialized, true, useHrtf, directionalFactor, environment);
+            Source = AudioLayer.SourceCreate(listener.Listener, sampleRate, dynamicSoundSource.MaxNumberOfBuffers, mono, spatialized, true, useHrtf, directionalFactor, environment, distanceScale);
             if (Source.Ptr == IntPtr.Zero)
             {
                 throw new Exception("Failed to create an AudioLayer Source");
@@ -61,7 +61,7 @@ namespace Stride.Audio
 
         internal SoundInstance() { }
 
-        internal SoundInstance(Sound staticSound, AudioListener listener, bool forceLoadInMemory, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        internal SoundInstance(Sound staticSound, AudioListener listener, bool forceLoadInMemory, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
             Listener = listener;
             engine = staticSound.AudioEngine;
@@ -73,7 +73,7 @@ namespace Stride.Audio
             if (engine.State == AudioEngineState.Invalidated)
                 return;
 
-            Source = AudioLayer.SourceCreate(listener.Listener, staticSound.SampleRate, streamed ? CompressedSoundSource.NumberOfBuffers : 1, staticSound.Channels == 1, spatialized, streamed, useHrtf, directionalFactor, environment);
+            Source = AudioLayer.SourceCreate(listener.Listener, staticSound.SampleRate, streamed ? CompressedSoundSource.NumberOfBuffers : 1, staticSound.Channels == 1, spatialized, streamed, useHrtf, directionalFactor, environment, distanceScale);
             if (Source.Ptr == IntPtr.Zero)
             {
                 throw new Exception("Failed to create an AudioLayer Source");

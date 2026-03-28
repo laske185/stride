@@ -1604,7 +1604,7 @@ extern "C" {
 			}
 		};
 
-		DLL_EXPORT_API xnAudioSource* xnAudioSourceCreate(xnAudioListener* listener, int sampleRate, int maxNBuffers, npBool mono, npBool spatialized, npBool streamed, npBool hrtf, float directionFactor, HrtfEnvironment environment)
+		DLL_EXPORT_API xnAudioSource* xnAudioSourceCreate(xnAudioListener* listener, int sampleRate, int maxNBuffers, npBool mono, npBool spatialized, npBool streamed, npBool hrtf, float directionFactor, HrtfEnvironment environment, float distanceScale)
 		{
 			(void)streamed;
 
@@ -1623,7 +1623,7 @@ extern "C" {
 				res->emitter_ = new X3DAUDIO_EMITTER;
 				memset(res->emitter_, 0x0, sizeof(X3DAUDIO_EMITTER));
 				res->emitter_->ChannelCount = 1;
-				res->emitter_->CurveDistanceScaler = 1;
+				res->emitter_->CurveDistanceScaler = distanceScale;
 				res->emitter_->DopplerScaler = 1;
 
 				res->dsp_settings_ = new X3DAUDIO_DSP_SETTINGS;
@@ -1680,6 +1680,13 @@ extern "C" {
 				IXAudio2SubmixVoice* submixVoice = NULL;
 
 				HrtfApoInit params = {};
+				HrtfDistanceDecay distanceDecay = {};
+				distanceDecay.type = NaturalDecay;
+				distanceDecay.maxGain = 12.0f;
+				distanceDecay.minGain = -96.0f;
+				distanceDecay.unityGainDistance = distanceScale;
+				distanceDecay.cutoffDistance = FLT_MAX;
+				params.distanceDecay = &distanceDecay;
 				HrtfDirectivity directivity;
 				directivity.type = OmniDirectional;
 				directivity.scaling = directionFactor;

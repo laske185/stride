@@ -40,7 +40,7 @@ namespace Stride.Audio
         /// </summary>
         /// <returns>A new sound instance</returns>
         /// <exception cref="ObjectDisposedException">The sound has already been disposed</exception>
-        public SoundInstance CreateInstance(AudioListener listener = null, bool forceLoadInMemory = false, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        public SoundInstance CreateInstance(AudioListener listener = null, bool forceLoadInMemory = false, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
             if (listener == null)
             {
@@ -49,15 +49,15 @@ namespace Stride.Audio
 
             CheckNotDisposed();
 
-            var newInstance = new SoundInstance(this, listener, forceLoadInMemory, useHrtf, directionalFactor, environment) { Name = Name + " - Instance " + intancesCreationCount };
+            var newInstance = new SoundInstance(this, listener, forceLoadInMemory, useHrtf, directionalFactor, environment, distanceScale) { Name = Name + " - Instance " + intancesCreationCount };
             RegisterInstance(newInstance);
 
             return newInstance;
         }
 
-        public override SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small)
+        public override SoundInstance CreateInstance(AudioListener listener = null, bool useHrtf = false, float directionalFactor = 0.0f, HrtfEnvironment environment = HrtfEnvironment.Small, float distanceScale = 1.0f)
         {
-            return CreateInstance(listener, false, useHrtf, directionalFactor, environment);
+            return CreateInstance(listener, false, useHrtf, directionalFactor, environment, distanceScale);
         }
 
         protected override void Destroy()
