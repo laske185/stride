@@ -111,19 +111,20 @@ jobs:
 
       - name: Push to GitHub Packages
         run: |
-          dotnet nuget add source `
-            --username ${{ github.actor }} `
-            --password ${{ secrets.GITHUB_TOKEN }} `
-            --store-password-in-clear-text `
-            --name github `
-            "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          $source = "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          $packages = Get-ChildItem "bin/packages/*.nupkg"
+          Write-Host "Pushing $($packages.Count) packages..."
 
-          # Alle Runtime-Pakete pushen, bereits vorhandene Versionen überspringen
-          Get-ChildItem "bin/packages/*.nupkg" | ForEach-Object {
-            Write-Host "Pushing: $($_.Name)"
-            dotnet nuget push $_.FullName `
-              --source github `
-              --skip-duplicate
+          foreach ($pkg in $packages) {
+            Write-Host "Pushing: $($pkg.Name)"
+            dotnet nuget push $pkg.FullName `
+              --source $source `
+              --api-key ${{ secrets.GITHUB_TOKEN }} `
+              --skip-duplicate `
+              --timeout 900
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning "Push failed for $($pkg.Name) (exit $LASTEXITCODE) - continuing"
+            }
           }
 
       - name: Upload packages as artifacts
