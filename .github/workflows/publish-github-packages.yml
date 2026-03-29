@@ -63,15 +63,25 @@ jobs:
             Set-Content $file
           Write-Host "Patched version to 4.3.0.2507$suffix"
 
-      - name: Set up system LLVM/Clang (replaces bundled 32-bit deps/LLVM)
+      - name: Set up system LLVM/Clang and VCTargetsPath
         run: |
+          # --- Clang/lld (replace bundled 32-bit deps/LLVM) ---
           $clang = (Get-Command clang -ErrorAction SilentlyContinue)?.Source
           if (-not $clang) { $clang = "C:\Program Files\LLVM\bin\clang.exe" }
-          $lld   = $clang -replace 'clang\.exe$', 'lld.exe'
+          $lld = $clang -replace 'clang\.exe$', 'lld.exe'
           Write-Host "Using clang: $clang"
           Write-Host "Using lld:   $lld"
           echo "STRIDE_CLANG=$clang" >> $env:GITHUB_ENV
           echo "STRIDE_LLD=$lld"     >> $env:GITHUB_ENV
+
+          # --- VCTargetsPath (needed for WindowsDesktop.vcxproj under dotnet msbuild) ---
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath  = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
+          if (-not $vsPath) { $vsPath = & $vswhere -latest -products * -property installationPath 2>$null }
+          $vcVer   = Get-ChildItem "$vsPath\MSBuild\Microsoft\VC" -Name | Sort-Object -Descending | Select-Object -First 1
+          $vcTargets = "$vsPath\MSBuild\Microsoft\VC\$vcVer\"
+          Write-Host "VCTargetsPath: $vcTargets"
+          echo "VC_TARGETS_PATH=$vcTargets" >> $env:GITHUB_ENV
 
       - name: Build Assembly Processor
         run: |
@@ -93,6 +103,7 @@ jobs:
             /p:StrideAssemblyProcessorFramework=net10.0 `
             /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            /p:VCTargetsPath="${{ env.VC_TARGETS_PATH }}" `
             /m
 
       - name: Build & Pack (Runtime packages)
@@ -106,6 +117,7 @@ jobs:
             /p:StrideAssemblyProcessorFramework=net10.0 `
             /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            /p:VCTargetsPath="${{ env.VC_TARGETS_PATH }}" `
             /m `
             /verbosity:minimal
 
