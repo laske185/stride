@@ -19,6 +19,7 @@ on:
       - 'sources/shared/SharedAssemblyInfo.cs'
       - 'sources/core/Stride.Core.AssemblyProcessor/**'
       - 'sources/targets/Stride.Core.targets'
+      - 'sources/native/Stride.Native.targets'
       - '.github/workflows/publish-github-packages.yml'
 
 env:
@@ -45,6 +46,9 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Setup VS MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -53,17 +57,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Patch version in SharedAssemblyInfo.cs
-        run: |
-          $file = "sources/shared/SharedAssemblyInfo.cs"
-          $suffix = "${{ github.event.inputs.version_suffix || '-local' }}"
-          (Get-Content $file) `
-            -replace 'PublicVersion = "4\.3\.0\.\d+"', 'PublicVersion = "4.3.0.2507"' `
-            -replace 'NuGetVersionSuffix = "[^"]*"', "NuGetVersionSuffix = `"$suffix`"" |
-            Set-Content $file
-          Write-Host "Patched version to 4.3.0.2507$suffix"
-
-      - name: Set up system LLVM/Clang and VCTargetsPath
+      - name: Resolve tool paths (clang, lld, MSBuildSDKsPath)
         run: |
           # --- Clang/lld (replace bundled 32-bit deps/LLVM) ---
           $clang = (Get-Command clang -ErrorAction SilentlyContinue)?.Source
@@ -74,14 +68,16 @@ jobs:
           echo "STRIDE_CLANG=$clang" >> $env:GITHUB_ENV
           echo "STRIDE_LLD=$lld"     >> $env:GITHUB_ENV
 
-          # --- VCTargetsPath (needed for WindowsDesktop.vcxproj under dotnet msbuild) ---
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $vsPath  = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
-          if (-not $vsPath) { $vsPath = & $vswhere -latest -products * -property installationPath 2>$null }
-          $vcVer   = Get-ChildItem "$vsPath\MSBuild\Microsoft\VC" -Name | Sort-Object -Descending | Select-Object -First 1
-          $vcTargets = "$vsPath\MSBuild\Microsoft\VC\$vcVer\"
-          Write-Host "VCTargetsPath: $vcTargets"
-          echo "VC_TARGETS_PATH=$vcTargets" >> $env:GITHUB_ENV
+          # --- MSBuildSDKsPath: lets VS MSBuild find Microsoft.NET.Sdk ---
+          # dotnet.exe is on PATH; its sdk folder contains the Sdks directory
+          $dotnetRoot = Split-Path (Get-Command dotnet).Source
+          $sdkDir = Get-ChildItem "$dotnetRoot\sdk" -Directory |
+                      Where-Object { $_.Name -match '^\d' } |
+                      Sort-Object Name -Descending |
+                      Select-Object -First 1
+          $sdksPath = "$dotnetRoot\sdk\$($sdkDir.Name)\Sdks"
+          Write-Host "MSBuildSDKsPath: $sdksPath"
+          echo "MSBUILD_SDKS_PATH=$sdksPath" >> $env:GITHUB_ENV
 
       - name: Build Assembly Processor
         run: |
@@ -94,7 +90,7 @@ jobs:
 
       - name: Restore NuGet packages
         run: |
-          dotnet msbuild build/Stride.Runtime.sln `
+          msbuild build/Stride.Runtime.sln `
             /t:Restore `
             /p:Configuration=${{ env.CONFIGURATION }} `
             /p:StrideSkipUnitTests=true `
@@ -103,12 +99,12 @@ jobs:
             /p:StrideAssemblyProcessorFramework=net10.0 `
             /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
-            /p:VCTargetsPath="${{ env.VC_TARGETS_PATH }}" `
+            /p:MSBuildSDKsPath="${{ env.MSBUILD_SDKS_PATH }}" `
             /m
 
       - name: Build & Pack (Runtime packages)
         run: |
-          dotnet msbuild build/Stride.Runtime.sln `
+          msbuild build/Stride.Runtime.sln `
             /p:Configuration=${{ env.CONFIGURATION }} `
             /p:StrideSkipAutoPack=false `
             /p:StrideSign=false `
@@ -117,7 +113,7 @@ jobs:
             /p:StrideAssemblyProcessorFramework=net10.0 `
             /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
-            /p:VCTargetsPath="${{ env.VC_TARGETS_PATH }}" `
+            /p:MSBuildSDKsPath="${{ env.MSBUILD_SDKS_PATH }}" `
             /m `
             /verbosity:minimal
 
