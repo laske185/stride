@@ -54,7 +54,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Resolve tool paths (clang, lld)
+      - name: Resolve tool paths and compute package version
         run: |
           # Use system clang/lld (64-bit) instead of bundled 32-bit deps/LLVM binaries
           $clang = (Get-Command clang -ErrorAction SilentlyContinue)?.Source
@@ -64,6 +64,15 @@ jobs:
           Write-Host "Using lld:   $lld"
           echo "STRIDE_CLANG=$clang" >> $env:GITHUB_ENV
           echo "STRIDE_LLD=$lld"     >> $env:GITHUB_ENV
+
+          # Compute NuGet version: 4.3.0.<git-height><suffix>
+          # PublicVersion base is "4.3.0" (4th digit replaced by git height)
+          $gitHeight = git rev-list --count HEAD
+          $suffix = "${{ github.event.inputs.version_suffix }}"
+          if ([string]::IsNullOrEmpty($suffix)) { $suffix = "-ci" }
+          $packageVersion = "4.3.0.$gitHeight$suffix"
+          Write-Host "Package version: $packageVersion"
+          echo "PACKAGE_VERSION=$packageVersion" >> $env:GITHUB_ENV
 
       - name: Build Assembly Processor
         run: |
@@ -86,6 +95,7 @@ jobs:
             -p:StrideNativeBuildMode=Clang `
             -p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             -p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            -p:PackageVersion="${{ env.PACKAGE_VERSION }}" `
             -m
 
       - name: Build & Pack (Runtime packages)
@@ -100,6 +110,7 @@ jobs:
             -p:StrideNativeBuildMode=Clang `
             -p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
             -p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            -p:PackageVersion="${{ env.PACKAGE_VERSION }}" `
             -m `
             -verbosity:minimal
 
