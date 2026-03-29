@@ -46,9 +46,6 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Setup VS MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -57,9 +54,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Resolve tool paths (clang, lld, MSBuildSDKsPath)
+      - name: Resolve tool paths (clang, lld)
         run: |
-          # --- Clang/lld (replace bundled 32-bit deps/LLVM) ---
+          # Use system clang/lld (64-bit) instead of bundled 32-bit deps/LLVM binaries
           $clang = (Get-Command clang -ErrorAction SilentlyContinue)?.Source
           if (-not $clang) { $clang = "C:\Program Files\LLVM\bin\clang.exe" }
           $lld = $clang -replace 'clang\.exe$', 'lld.exe'
@@ -67,17 +64,6 @@ jobs:
           Write-Host "Using lld:   $lld"
           echo "STRIDE_CLANG=$clang" >> $env:GITHUB_ENV
           echo "STRIDE_LLD=$lld"     >> $env:GITHUB_ENV
-
-          # --- MSBuildSDKsPath: lets VS MSBuild find Microsoft.NET.Sdk ---
-          # dotnet.exe is on PATH; its sdk folder contains the Sdks directory
-          $dotnetRoot = Split-Path (Get-Command dotnet).Source
-          $sdkDir = Get-ChildItem "$dotnetRoot\sdk" -Directory |
-                      Where-Object { $_.Name -match '^\d' } |
-                      Sort-Object Name -Descending |
-                      Select-Object -First 1
-          $sdksPath = "$dotnetRoot\sdk\$($sdkDir.Name)\Sdks"
-          Write-Host "MSBuildSDKsPath: $sdksPath"
-          echo "MSBUILD_SDKS_PATH=$sdksPath" >> $env:GITHUB_ENV
 
       - name: Build Assembly Processor
         run: |
@@ -90,32 +76,32 @@ jobs:
 
       - name: Restore NuGet packages
         run: |
-          msbuild build/Stride.Runtime.sln `
-            /t:Restore `
-            /p:Configuration=${{ env.CONFIGURATION }} `
-            /p:StrideSkipUnitTests=true `
-            /p:StrideSign=false `
-            /p:StrideAssemblyProcessorDev=true `
-            /p:StrideAssemblyProcessorFramework=net10.0 `
-            /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
-            /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
-            /p:MSBuildSDKsPath="${{ env.MSBUILD_SDKS_PATH }}" `
-            /m
+          dotnet msbuild build/Stride.Runtime.sln `
+            -t:Restore `
+            -p:Configuration=${{ env.CONFIGURATION }} `
+            -p:StrideSkipUnitTests=true `
+            -p:StrideSign=false `
+            -p:StrideAssemblyProcessorDev=true `
+            -p:StrideAssemblyProcessorFramework=net10.0 `
+            -p:StrideNativeBuildModeClang=true `
+            -p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
+            -p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            -m
 
       - name: Build & Pack (Runtime packages)
         run: |
-          msbuild build/Stride.Runtime.sln `
-            /p:Configuration=${{ env.CONFIGURATION }} `
-            /p:StrideSkipAutoPack=false `
-            /p:StrideSign=false `
-            /p:StrideSkipUnitTests=true `
-            /p:StrideAssemblyProcessorDev=true `
-            /p:StrideAssemblyProcessorFramework=net10.0 `
-            /p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
-            /p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
-            /p:MSBuildSDKsPath="${{ env.MSBUILD_SDKS_PATH }}" `
-            /m `
-            /verbosity:minimal
+          dotnet msbuild build/Stride.Runtime.sln `
+            -p:Configuration=${{ env.CONFIGURATION }} `
+            -p:StrideSkipAutoPack=false `
+            -p:StrideSign=false `
+            -p:StrideSkipUnitTests=true `
+            -p:StrideAssemblyProcessorDev=true `
+            -p:StrideAssemblyProcessorFramework=net10.0 `
+            -p:StrideNativeBuildModeClang=true `
+            -p:StrideNativeClangCommand="${{ env.STRIDE_CLANG }}" `
+            -p:StrideNativeLldCommand="${{ env.STRIDE_LLD }}" `
+            -m `
+            -verbosity:minimal
 
       - name: List generated packages
         run: |
