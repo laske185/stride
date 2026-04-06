@@ -160,9 +160,17 @@ namespace Stride.Rendering.OcclusionSilhouette
             var silhouetteColors = RootRenderFeature.RenderData.GetData(silhouetteColorKey);
             var color = silhouetteColors[renderObject.ObjectNode];
 
-            // Skip if no silhouette color set (component absent or disabled)
+            // No silhouette color set (component absent or disabled).
+            // If this is the silhouette stage, disable color writes so the entity
+            // doesn't render black over the framebuffer.
             if (color == new Color4(0))
+            {
+                if (SilhouetteRenderStage != null && renderNode.RenderStage == SilhouetteRenderStage)
+                {
+                    pipelineState.BlendState.RenderTarget0.ColorWriteChannels = ColorWriteChannels.None;
+                }
                 return;
+            }
 
             var stencilOps = new DepthStencilStencilOpDescription
             {
