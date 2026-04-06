@@ -37,7 +37,6 @@ namespace Stride.Rendering.OcclusionSilhouette
     /// the <c>TransformationSkinning</c> mixin.
     /// </para>
     /// </remarks>
-    [DataContract]
     [Display("Occlusion Silhouette")]
     public class OcclusionSilhouetteRenderFeature : SubRenderFeature
     {
