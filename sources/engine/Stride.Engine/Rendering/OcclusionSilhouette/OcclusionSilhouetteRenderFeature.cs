@@ -19,14 +19,14 @@ namespace Stride.Rendering.OcclusionSilhouette
     /// <b>Setup in Graphics Compositor:</b>
     /// <list type="number">
     ///   <item>Add a render stage (e.g. "OcclusionSilhouette") with effect name <c>OcclusionSilhouetteEffect</c>.</item>
-    ///   <item>Add a <see cref="SimpleGroupToRenderStageSelector"/> targeting the desired <see cref="RenderGroup"/> for that stage.</item>
+    ///   <item>Add a <see cref="SimpleGroupToRenderStageSelector"/> for that stage (use <see cref="RenderGroupMask.All"/> to cover all entities).</item>
     ///   <item>Add this feature to <see cref="MeshRenderFeature.RenderFeatures"/>.</item>
     ///   <item>Set <see cref="OpaqueRenderStage"/> to the existing opaque stage and <see cref="SilhouetteRenderStage"/> to the new stage.</item>
     /// </list>
     /// </para>
     /// <para>
     /// <b>Per-entity setup:</b>
-    /// Attach an <see cref="OcclusionSilhouetteComponent"/> to entities and assign them to the matching <see cref="RenderGroup"/>.
+    /// Attach an <see cref="OcclusionSilhouetteComponent"/> to entities. No specific <see cref="RenderGroup"/> is required by default.
     /// </para>
     /// <para>
     /// <b>How it works:</b>
@@ -45,10 +45,12 @@ namespace Stride.Rendering.OcclusionSilhouette
 
         /// <summary>
         /// Gets or sets the render group mask used to filter which entities receive the silhouette effect.
+        /// Defaults to <see cref="RenderGroupMask.All"/> so that any entity with an <see cref="OcclusionSilhouetteComponent"/>
+        /// is processed regardless of its render group.
         /// </summary>
         [DataMember(10)]
-        [DefaultValue(RenderGroupMask.Group1)]
-        public RenderGroupMask RenderGroup { get; set; } = RenderGroupMask.Group1;
+        [DefaultValue(RenderGroupMask.All)]
+        public RenderGroupMask RenderGroup { get; set; } = RenderGroupMask.All;
 
         /// <summary>
         /// Gets or sets the opaque render stage. During this stage, stencil is written for matching entities
